@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+PROJECTS_DIR="${HOME}/Projects"
+export PROJECTS_DIR
+
+# Check dependencies
+for cmd in fzf tmux; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Error: '$cmd' is required but not installed." >&2
+        exit 1
+    fi
+done
+
+if [[ ! -d "$PROJECTS_DIR" ]]; then
+    echo "Error: $PROJECTS_DIR does not exist." >&2
+    exit 1
+fi
+
+# List project directory names, including hidden projects.
+selected=$(
+    find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' |
+        sort |
+        fzf \
+            --height=100% \
+            --layout=reverse \
+            --border \
+            --prompt="Projects > " \
+            --header="Enter: open project | Esc: quit" \
+            --preview='
+                name={}
+                dir=$PROJECTS_DIR/$name
+                printf "\033[1;36m%s\033[0m\n\n" "$name"
+                ls -la -- "$dir"
+                printf "\n\033[1;33mProject files\033[0m\n"
+                find "$dir" -maxdepth 2 -type f \
+                    ! -path "*/.git/*" \
+                    ! -path "*/node_modules/*" \
+                    ! -path "*/.venv/*" \
+                    | head -60
+            ' \
+            --preview-window='right,60%,border-left'
+) || exit 0
+
+[[ -n "$selected" ]] || exit 0
+
+# Resolve the full path for the selected project.
+selected="$PROJECTS_DIR/$selected"
+
+# Use the directory name as the session name.
+project_name=$(basename "$selected")
+
+# Replace characters that are awkward in tmux session names.
+session_name=$(printf '%s' "$project_name" |
+    sed 's/[^a-zA-Z0-9_-]/_/g')
+
+# Attach to an existing session or create a new one.
+if tmux has-session -t "=$session_name" 2>/dev/null; then
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "=$session_name"
+    else
+        tmux attach-session -t "=$session_name"
+    fi
+else
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux new-session -d -s "$session_name" -c "$selected"
+        tmux switch-client -t "=$session_name"
+    else
+        tmux new-session -s "$session_name" -c "$selected"
+    fi
+fi

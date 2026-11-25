@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "imran.emoji-picker",
+  "name": "Emoji Picker",
+  "version": "1.0.0",
+  "author": "imran",
+  "license": "MIT",
+  "description": "A Windows-style emoji picker with Facebook-style ordering that opens below the cursor and inserts the selected emoji into the focused text field.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "EmojiPicker.qml"
+  }
+}
