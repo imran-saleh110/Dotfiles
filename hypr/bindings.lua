@@ -1,3 +1,6 @@
+-- Right Alt is not a dictation key: drop Omarchy's default push-to-talk bind.
+hl.unbind("ALT + Alt_R")
+
 -- Window focus
 o.bind("SUPER + h", "Focus left window", hl.dsp.focus({ direction = "l" }))
 o.rebind("SUPER + j", "Focus below window", hl.dsp.focus({ direction = "d" }))
